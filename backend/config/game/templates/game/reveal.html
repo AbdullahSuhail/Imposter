@@ -1,0 +1,107 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game</title>
+    
+     <link rel="stylesheet" href="{% static 'game/game.css' %}">
+</head>
+
+<body>
+
+    <div class="game-container">
+
+        <div class="game-card">
+
+           
+            <h2 id="word"></h2>
+
+            <p>
+                Read the information carefully before continuing.
+            </p>
+            
+            {% if is_host %}
+                <button id="doneBtn">Done</button>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+
+<script>
+   
+   const roomCode="{{code}}"
+    console.log(roomCode) 
+    const socket = new WebSocket(
+    "ws://" + window.location.host + "/ws/game/" + roomCode + "/"
+);
+
+console.log("SOCKET CREATED:", socket);
+socket.onopen = () => {
+    console.log("GAME SOCKET CONNECTED FROM BROWSER");
+};
+
+socket.onmessage = (event) => {
+
+    const data = JSON.parse(event.data);
+
+    console.log("enter onmesage")
+
+ 
+    if (data.type === "word") {
+        document.getElementById("word").textContent = data.word;
+    }
+
+    if (data.type === "clue_started") {
+                console.log("TheSHOULD ENTER CLUE PHASE BTW")
+        window.location.href = "/game/" + roomCode + "/clue/";
+    }
+
+    socket.onopen = () => {
+
+    console.log("SOCKET IS OPEN");
+
+    document.getElementById("doneBtn").addEventListener("click", () => {
+
+        console.log("DONE CLICKED");
+        console.log("STATE:", socket.readyState);
+
+        socket.send(JSON.stringify({
+            type: "start_clue"
+        }));
+
+        console.log("MESSAGE SENT");
+    });
+
+};
+};
+
+socket.onerror = (error) => {
+    console.log("GAME SOCKET ERROR:", error);
+};
+
+socket.onclose = () => {
+  console.log("WEBSOCKET CLOSED");
+    console.log("CODE:", event.code);
+    console.log("REASON:", event.reason);
+};
+
+
+
+
+document.getElementById("doneBtn").onclick=()=>{
+
+      console.log("DONE CLICKED");
+
+        socket.send(JSON.stringify({
+            type: "startClue"
+        }));
+
+    console.log("MESSAGE SENT"); 
+}
+</script>
+</html>

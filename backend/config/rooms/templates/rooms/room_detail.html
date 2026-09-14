@@ -1,0 +1,180 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Room {{ room.code }}</title>
+
+    <link rel="stylesheet" href="{% static 'rooms/room_detail.css' %}">
+</head>
+
+<body>
+
+    <div class="room-page">
+
+        <h2 class="room-title">
+            Room Code:
+            <span class="room-code">{{ room.code }}</span>
+        </h2>
+
+        <p class="room-description">
+            Share this code with friends so they can join!
+        </p>
+
+        <div class="players-container">
+
+            <h3 class="players-title">
+                Joined Players ({{ players|length }})
+            </h3>
+
+            <ul id="playerNames" class="player-list">
+ 
+ {% comment %}   VALUES ARE ADDED HERE FROM JAVASCRIPT {% endcomment %}
+ 
+
+            </ul>
+
+        </div>
+
+   
+        <div id="host-action-container" style="{% if not is_host %}display: none;{% endif %}">
+            <button id="start-game-btn" class="btn-start-game">START GAME</button>
+        </div>
+        <a href="{% url 'home' %}" class="leave-link" id="leavebtn">
+            <button>
+
+                ← Leave Room / Back to Home
+            </button>
+        </a>
+
+    </div>
+
+
+    <script>
+        const roomCode = "{{ room.code }}";
+        const gameUrl = "{% url 'game' room.code %}";
+
+        const currentSessionPlayerId = "{{ request.session.player_id }}";
+
+        console.log("ROOM CODE:", roomCode);
+
+        const socket = new WebSocket(
+            "ws://" + window.location.host + "/ws/room/" + roomCode + "/"
+        );
+
+        socket.onopen = () => {
+            console.log("CONNECTED FROM HTML");
+         };
+
+
+        socket.onmessage = (event) => {
+
+            const data = JSON.parse(event.data);
+
+            // =========================
+            // UPDATE PLAYER LIST
+            // =========================
+            if (data.type === "update_player_list") {
+
+                const list = document.getElementById("playerNames");
+
+                list.innerHTML = "";
+
+                if (data.players.length === 0) {
+                    list.innerHTML = "<li>Waiting for players...</li>";
+                    return;
+                }
+
+                data.players.forEach(player => {
+
+                    const li = document.createElement("li");
+
+                    li.className = "player-item";
+
+                    li.textContent =
+                        player.nickname +
+                        (player.is_host ? " (Host)" : "");
+
+                    list.appendChild(li);
+                });
+
+
+                // Check whether THIS browser is the host
+                const isCurrentHost = data.players.some(
+                    player =>
+                        player.player_id === currentSessionPlayerId &&
+                        player.is_host
+                );
+
+                const hostContainer =
+                    document.getElementById("host-action-container");
+
+                if (hostContainer) {
+                    hostContainer.style.display =
+                        isCurrentHost ? "block" : "none";
+                }
+            }
+
+
+            // =========================
+            // GAME STARTED
+            // =========================
+            else if (data.type === "game_started") {
+
+                console.log("GAME STARTED!");
+
+                window.location.href = gameUrl;
+            }
+        };
+
+ 
+
+        socket.onerror = (error) => {
+            console.log("WEBSOCKET ERROR:", error);
+        };
+
+        socket.onclose = () => {
+            console.log("DISCONNECTED");
+            const leavebtn=document.getElementById("leavebtn")
+    
+            leavebtn.addEventListener("click",()=>{
+                console.log("This running ")
+                   socket.close();         
+            })
+        };
+
+        {% comment %}  LEAVING ROOM {% endcomment %}
+const leaveButton = document.getElementById("leavebtn");
+
+leaveButton.addEventListener("click", (event) => {
+
+    event.preventDefault();
+
+    socket.send(JSON.stringify({
+        type: "leave"
+    }));
+
+    socket.onclose = () => {
+        window.location.href = "{% url 'home' %}";
+    };
+});
+
+{% comment %} START GAME PART {% endcomment %}
+
+        const startbtn=document.getElementById("start-game-btn")
+
+        startbtn.addEventListener("click",()=>{
+            socket.send(JSON.stringify(
+        {
+            type:"start_game"
+        }
+
+            ))
+        })
+
+
+    </script>
+
+</body>
+</html>

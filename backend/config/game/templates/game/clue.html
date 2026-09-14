@@ -1,0 +1,54 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clue</title>
+
+    <link rel="stylesheet" href="{% static 'game/clue.css' %}">
+</head>
+
+<body>
+
+    <div class="clue-page">
+
+        <div class="clue-card">
+
+            <h1 class="clue-title">Your Clue</h1>
+
+            <p class="clue-text">
+                Something related to the secret word goes here.
+            </p>
+
+            <button class="done-btn" id="nextBtn">
+                Done
+            </button>
+
+        </div>
+
+    </div>
+
+</body>
+
+
+<script>
+   const roomCode="{{code}}"
+    console.log(roomCode) 
+    const socket = new WebSocket(
+    "ws://" + window.location.host + "/ws/game/" + roomCode + "/"
+    );
+
+
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+
+    socket.send(JSON.stringify({
+        type: "next_turn"
+    }));
+
+});
+</script>
+</html>
