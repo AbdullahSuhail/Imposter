@@ -17,7 +17,7 @@
 
         <div class="clue-card">
 
-            <h1 class="clue-title">Your Clue</h1>
+            <h1 class="playerName">Your Clue</h1>
 
             <p class="clue-text">
                 Something related to the secret word goes here.
@@ -35,20 +35,54 @@
 
 
 <script>
-   const roomCode="{{code}}"
-    console.log(roomCode) 
-    const socket = new WebSocket(
+
+const roomCode="{{code}}"
+const myPlayerId = "{{ request.session.player_id }}";
+
+
+
+console.log(roomCode) 
+const socket = new WebSocket(
     "ws://" + window.location.host + "/ws/game/" + roomCode + "/"
-    );
+);
 
 
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
 
+ 
+    if (data.type === "clue_started") {
+
+        document.getElementById("playerName").textContent =
+            data.nickname;
+
+        if (data.player_id === myPlayerId) {
+            document.getElementById("nextBtn").disabled = false;
+        } else {
+            document.getElementById("nextBtn").disabled = true;
+        }
+    }
+
+    if (data.type === "turn_changed") {
+
+        document.getElementById("playerName").textContent =
+            data.nickname;
+
+        if (data.player_id === myPlayerId) {
+            document.getElementById("nextBtn").disabled = false;
+        } else {
+            document.getElementById("nextBtn").disabled = true;
+        }
+
+
+};
+  
 document.getElementById("nextBtn").addEventListener("click", () => {
-
     socket.send(JSON.stringify({
         type: "next_turn"
     }));
-
 });
+
+
 </script>
 </html>
