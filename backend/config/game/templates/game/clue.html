@@ -17,7 +17,7 @@
 
         <div class="clue-card">
 
-            <h1 class="playerName">Your Clue</h1>
+            <h1 id="playerName">Your Clue</h1>
 
             <p class="clue-text">
                 Something related to the secret word goes here.
@@ -50,6 +50,17 @@ const socket = new WebSocket(
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
+
+    console.log("The data that come form reveal to clue phase is ");
+    console.log(data)
+
+
+    if (data.type === "current_player") {
+
+        document.getElementById("playerName").textContent =
+            data.nickname;
+    }
+
  
     if (data.type === "clue_started") {
 
@@ -63,6 +74,7 @@ socket.onmessage = (event) => {
         }
     }
 
+
     if (data.type === "turn_changed") {
 
         document.getElementById("playerName").textContent =
@@ -73,11 +85,20 @@ socket.onmessage = (event) => {
         } else {
             document.getElementById("nextBtn").disabled = true;
         }
+    }
 
 
 };
+
+socket.onopen = () => {
+    socket.send(JSON.stringify({
+        type: "clue_connected"
+    }));
+};
   
 document.getElementById("nextBtn").addEventListener("click", () => {
+
+    console.log("WE HAVE ENTER DONE ");
     socket.send(JSON.stringify({
         type: "next_turn"
     }));
